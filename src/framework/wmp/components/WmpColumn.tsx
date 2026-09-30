@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { WmpColumnProps } from '../types';
 import { WmpColors } from '../theme/colors';
 import { WmpTheme } from '../theme';
+import { useResponsive } from '../hooks/useResponsive';
 
 export const WmpColumn: React.FC<WmpColumnProps> = ({
   title,
@@ -13,12 +14,36 @@ export const WmpColumn: React.FC<WmpColumnProps> = ({
   children,
   style,
 }) => {
+  const { isMobile, isDesktop, columnWidth } = useResponsive();
   const columnColor = color || WmpColors.status[status] || WmpColors.primary;
 
+  // On mobile, some columns start expanded by default
+  const defaultExpanded = !isMobile || status === 'in_progress' || status === 'todo' || status === 'doing';
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
+  const toggleExpanded = () => {
+    if (isMobile) setExpanded((prev) => !prev);
+  };
+
+  const dynamicColumnStyle = isMobile
+    ? {
+        width: '100%' as const,
+        marginRight: 0,
+        marginBottom: 10,
+      }
+    : {
+        width: typeof columnWidth === 'number' ? columnWidth : 290,
+        marginRight: WmpTheme.spacing.md,
+      };
+
   return (
-    <View style={[styles.column, style]}>
+    <View style={[styles.column, dynamicColumnStyle, style]}>
       {/* Column Header */}
-      <View style={styles.header}>
+      <TouchableOpacity
+        activeOpacity={isMobile ? 0.7 : 1}
+        onPress={toggleExpanded}
+        style={styles.header}
+      >
         <View style={styles.titleRow}>
           <View style={[styles.statusDot, { backgroundColor: columnColor }]} />
           <Text style={styles.title} numberOfLines={1}>
@@ -27,40 +52,52 @@ export const WmpColumn: React.FC<WmpColumnProps> = ({
           <View style={[styles.countBadge, { backgroundColor: `${columnColor}25` }]}>
             <Text style={[styles.countText, { color: columnColor }]}>{count}</Text>
           </View>
+          {isMobile ? (
+            <Text style={styles.chevron}>{expanded ? '▾' : '▸'}</Text>
+          ) : null}
         </View>
 
         {onAddCard ? (
           <TouchableOpacity
             activeOpacity={0.7}
-            onPress={onAddCard}
+            onPress={(e) => {
+              e.stopPropagation();
+              onAddCard();
+            }}
             style={styles.addButton}
           >
             <Text style={styles.addButtonText}>+</Text>
           </TouchableOpacity>
         ) : null}
-      </View>
+      </TouchableOpacity>
 
-      {/* Column Content */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.contentContainer}
-      >
-        {children}
-      </ScrollView>
+      {/* Column Content — collapsible on mobile */}
+      {expanded ? (
+        isMobile ? (
+          <View style={styles.contentContainerMobile}>
+            {children}
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.contentContainer}
+          >
+            {children}
+          </ScrollView>
+        )
+      ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   column: {
-    width: 290,
     backgroundColor: 'rgba(15, 23, 42, 0.75)',
     borderRadius: WmpTheme.radius.lg,
     borderWidth: 1,
     borderColor: WmpColors.border,
     padding: WmpTheme.spacing.md,
-    marginRight: WmpTheme.spacing.md,
-    maxHeight: '100%',
+    maxHeight: undefined,
   },
   header: {
     flexDirection: 'row',
@@ -101,6 +138,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
+  chevron: {
+    color: WmpColors.textMuted,
+    fontSize: 14,
+    marginLeft: 6,
+  },
   addButton: {
     width: 26,
     height: 26,
@@ -119,5 +161,8 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingBottom: 20,
+  },
+  contentContainerMobile: {
+    paddingBottom: 8,
   },
 });

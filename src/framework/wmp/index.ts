@@ -12,6 +12,8 @@ import { WmpHeader } from './components/WmpHeader';
 export * from './types';
 export * from './theme';
 export * from './theme/colors';
+export { useResponsive } from './hooks/useResponsive';
+export type { WmpResponsive, WmpDeviceType } from './hooks/useResponsive';
 
 // Individual Component exports
 export {

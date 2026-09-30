@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { WmpBoardProps } from '../types';
 import { WmpColors } from '../theme/colors';
 import { WmpTheme } from '../theme';
+import { useResponsive } from '../hooks/useResponsive';
 
 export const WmpBoard: React.FC<WmpBoardProps> = ({
   title,
@@ -11,6 +12,14 @@ export const WmpBoard: React.FC<WmpBoardProps> = ({
   children,
   style,
 }) => {
+  const { isMobile, boardLayout } = useResponsive();
+
+  const dynamicSubtitle = subtitle
+    ? isMobile
+      ? 'Desliza verticalmente entre estados'
+      : subtitle
+    : undefined;
+
   return (
     <View style={[styles.container, style]}>
       {title ? (
@@ -24,18 +33,24 @@ export const WmpBoard: React.FC<WmpBoardProps> = ({
               ) : null}
               <Text style={styles.title}>{title}</Text>
             </View>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            {dynamicSubtitle ? <Text style={styles.subtitle}>{dynamicSubtitle}</Text> : null}
           </View>
         </View>
       ) : null}
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.columnsContainer}
-      >
-        {children}
-      </ScrollView>
+      {boardLayout === 'horizontal' ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.columnsHorizontal}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={styles.columnsVertical}>
+          {children}
+        </View>
+      )}
     </View>
   );
 };
@@ -75,10 +90,14 @@ const styles = StyleSheet.create({
   subtitle: {
     ...WmpTheme.typography.caption,
   },
-  columnsContainer: {
+  columnsHorizontal: {
     paddingHorizontal: WmpTheme.spacing.lg,
     paddingVertical: WmpTheme.spacing.md,
     flexDirection: 'row',
     alignItems: 'flex-start',
+  },
+  columnsVertical: {
+    paddingHorizontal: WmpTheme.spacing.md,
+    paddingVertical: WmpTheme.spacing.sm,
   },
 });

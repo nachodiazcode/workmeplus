@@ -17,6 +17,7 @@ import {
   WmpTheme,
   WmpStatus,
   WmpPriority,
+  useResponsive,
 } from './src/framework/wmp';
 
 // Mock Data & Modals
@@ -46,6 +47,9 @@ export default function App() {
   // Search & Filter
   const [searchQuery, setSearchQuery] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'urgent' | 'in_progress' | 'done'>('all');
+
+  // Responsive Layout
+  const { isMobile, metricsColumns } = useResponsive();
 
   // Active Project
   const activeProject = useMemo(() => {
@@ -219,34 +223,37 @@ export default function App() {
 
       <ScrollView style={styles.mainScroll} showsVerticalScrollIndicator={false}>
         {/* 2. Métricas del Proyecto (Jira Velocity & Progress) */}
-        <View style={styles.metricsRow}>
+        <View style={[styles.metricsRow, isMobile && styles.metricsRowMobile]}>
           <Wmp.Metric
             title="Avance Total"
             value={`${metrics.progressPct}%`}
             change={`${metrics.done} de ${metrics.total} completadas`}
             color={metrics.progressPct === 100 ? WmpColors.status.done : WmpColors.primaryLight}
+            style={isMobile ? styles.metricCardMobile : undefined}
           />
           <Wmp.Metric
             title="En Proceso"
             value={metrics.inProgress}
             change="En desarrollo activo"
             color={WmpColors.status.in_progress}
+            style={isMobile ? styles.metricCardMobile : undefined}
           />
           <Wmp.Metric
             title="Urgentes"
             value={metrics.urgent}
             change={metrics.urgent > 0 ? 'Atención requerida' : 'Sin bloqueos'}
             color={metrics.urgent > 0 ? WmpColors.status.blocked : WmpColors.textMuted}
+            style={isMobile ? styles.metricCardMobile : undefined}
           />
         </View>
 
         {/* 3. Barra de Búsqueda y Filtros Rápidos */}
-        <View style={styles.filterSection}>
+        <View style={[styles.filterSection, isMobile && { paddingHorizontal: WmpTheme.spacing.md }]}>
           <View style={styles.searchBar}>
             <Text style={styles.searchIcon}>🔍</Text>
             <TextInput
               style={styles.searchInput}
-              placeholder="Buscar por título, código (WMP-101) o etiqueta..."
+              placeholder={isMobile ? 'Buscar tarea...' : 'Buscar por título, código (WMP-101) o etiqueta...'}
               placeholderTextColor={WmpColors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -258,7 +265,11 @@ export default function App() {
             ) : null}
           </View>
 
-          <View style={styles.filterPills}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterPills}
+          >
             <TouchableOpacity
               onPress={() => setFilterMode('all')}
               style={[styles.filterPill, filterMode === 'all' && styles.filterPillActive]}
@@ -294,7 +305,7 @@ export default function App() {
                 ✅ Listos
               </Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </View>
 
         {/* 4. Tablero Kanban con Framework WMP */}
@@ -515,5 +526,14 @@ const styles = StyleSheet.create({
     color: WmpColors.primaryLight,
     fontSize: 11,
     fontWeight: '600',
+  },
+  // ─── Responsive Mobile Overrides ───
+  metricsRowMobile: {
+    flexDirection: 'column',
+    paddingHorizontal: WmpTheme.spacing.md,
+  },
+  metricCardMobile: {
+    marginHorizontal: 0,
+    marginBottom: 8,
   },
 });
